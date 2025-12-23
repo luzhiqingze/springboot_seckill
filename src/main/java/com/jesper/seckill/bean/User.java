@@ -1,12 +1,19 @@
 package com.jesper.seckill.bean;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.util.Date;
 
 /**
  * Created by jiangyunxiong on 2018/5/22.
  */
+@TableName("seckill_user")
 public class User {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
+    private String mobile;
     private String nickname;
     private String password;
     private String salt;
@@ -19,6 +26,12 @@ public class User {
     }
     public void setId(Long id) {
         this.id = id;
+    }
+    public String getMobile() {
+        return mobile;
+    }
+    public void setMobile(String mobile) {
+        this.mobile = mobile;
     }
     public String getNickname() {
         return nickname;

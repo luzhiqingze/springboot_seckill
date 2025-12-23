@@ -1,11 +1,11 @@
 package com.jesper.seckill.config;
 
-import com.alibaba.druid.util.StringUtils;
 import com.jesper.seckill.bean.User;
 import com.jesper.seckill.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -45,13 +45,31 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
         HttpServletRequest request = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
         HttpServletResponse response = nativeWebRequest.getNativeResponse(HttpServletResponse.class);
 
+        String headerToken = getTokenFromHeader(request);
+        if (StringUtils.hasText(headerToken)) {
+            return userService.getByToken(response, headerToken);
+        }
+
         String paramToken = request.getParameter(UserService.COOKIE_NAME_TOKEN);
         String cookieToken = getCookieValue(request, UserService.COOKIE_NAME_TOKEN);
-        if (StringUtils.isEmpty(cookieToken) && StringUtils.isEmpty(paramToken)) {
+        if (!StringUtils.hasText(cookieToken) && !StringUtils.hasText(paramToken)) {
             return null;
         }
-        String token = StringUtils.isEmpty(paramToken) ? cookieToken : paramToken;
+        String token = !StringUtils.hasText(paramToken) ? cookieToken : paramToken;
         return userService.getByToken(response, token);
+    }
+
+    private String getTokenFromHeader(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        if (StringUtils.hasText(authorization)) {
+            String prefix = "Bearer ";
+            if (authorization.startsWith(prefix)) {
+                String token = authorization.substring(prefix.length()).trim();
+                return StringUtils.hasText(token) ? token : null;
+            }
+        }
+        String tokenHeader = request.getHeader(UserService.COOKIE_NAME_TOKEN);
+        return StringUtils.hasText(tokenHeader) ? tokenHeader.trim() : null;
     }
 
     //遍历所有cookie，找到需要的那个cookie

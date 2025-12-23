@@ -40,7 +40,6 @@ public class OrderService {
     public OrderInfo createOrder(User user, GoodsVo goods) {
         OrderInfo orderInfo = new OrderInfo();
         orderInfo.setCreateDate(new Date());
-        orderInfo.setDeliveryAddrId(0L);
         orderInfo.setGoodsCount(1);
         orderInfo.setGoodsId(goods.getId());
         orderInfo.setGoodsName(goods.getGoodsName());

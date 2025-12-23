@@ -15,12 +15,10 @@ import com.jesper.seckill.service.SeckillService;
 import com.jesper.seckill.vo.GoodsVo;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,8 +27,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by jiangyunxiong on 2018/5/22.
  */
-@Controller
-@RequestMapping("/seckill")
+@RestController
+@RequestMapping("/api/seckill")
 public class SeckillController implements InitializingBean {
 
     @Autowired
@@ -61,23 +59,20 @@ public class SeckillController implements InitializingBean {
      * <p>
      * 将同步下单改为异步下单
      *
-     * @param model
      * @param user
      * @param goodsId
      * @return
      */
     @RequestMapping(value = "/do_seckill", method = RequestMethod.POST)
-    @ResponseBody
-    public Result<Integer> list(Model model, User user, @RequestParam("goodsId") long goodsId) {
+    public Result<Integer> list(User user, @RequestParam("goodsId") long goodsId) {
 
         if (!rateLimiter.tryAcquire(1000, TimeUnit.MILLISECONDS)) {
-            return  Result.error(CodeMsg.ACCESS_LIMIT_REACHED);
+            return Result.error(CodeMsg.ACCESS_LIMIT_REACHED);
         }
 
         if (user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
-        model.addAttribute("user", user);
         //内存标记，减少redis访问
         boolean over = localOverMap.get(goodsId);
         if (over) {
@@ -128,10 +123,8 @@ public class SeckillController implements InitializingBean {
      * 0： 排队中
      */
     @RequestMapping(value = "/result", method = RequestMethod.GET)
-    @ResponseBody
-    public Result<Long> seckillResult(Model model, User user,
+    public Result<Long> seckillResult(User user,
                                       @RequestParam("goodsId") long goodsId) {
-        model.addAttribute("user", user);
         if (user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }

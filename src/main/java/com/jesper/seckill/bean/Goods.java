@@ -1,5 +1,7 @@
 package com.jesper.seckill.bean;
 
+import java.math.BigDecimal;
+
 /**
  * Created by jiangyunxiong on 2018/5/22.
  */
@@ -9,7 +11,7 @@ public class Goods {
     private String goodsTitle;
     private String goodsImg;
     private String goodsDetail;
-    private Double goodsPrice;
+    private BigDecimal goodsPrice;
     private Integer goodsStock;
     public Long getId() {
         return id;
@@ -41,10 +43,10 @@ public class Goods {
     public void setGoodsDetail(String goodsDetail) {
         this.goodsDetail = goodsDetail;
     }
-    public Double getGoodsPrice() {
+    public BigDecimal getGoodsPrice() {
         return goodsPrice;
     }
-    public void setGoodsPrice(Double goodsPrice) {
+    public void setGoodsPrice(BigDecimal goodsPrice) {
         this.goodsPrice = goodsPrice;
     }
     public Integer getGoodsStock() {

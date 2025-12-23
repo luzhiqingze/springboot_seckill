@@ -2,13 +2,14 @@ package com.jesper.seckill.vo;
 
 import com.jesper.seckill.bean.Goods;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
  * Created by jiangyunxiong on 2018/5/22.
  */
 public class GoodsVo extends Goods {
-    private Double seckillPrice;
+    private BigDecimal seckillPrice;
     private Integer stockCount;
     private Date startDate;
     private Date endDate;
@@ -38,11 +39,11 @@ public class GoodsVo extends Goods {
         this.endDate = endDate;
     }
 
-    public Double getSeckillPrice() {
+    public BigDecimal getSeckillPrice() {
         return seckillPrice;
     }
 
-    public void setSeckillPrice(Double seckillPrice) {
+    public void setSeckillPrice(BigDecimal seckillPrice) {
         this.seckillPrice = seckillPrice;
     }
 

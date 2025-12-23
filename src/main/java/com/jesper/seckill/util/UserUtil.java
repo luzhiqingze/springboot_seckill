@@ -25,7 +25,7 @@ public class UserUtil {
 		//生成用户
 		for(int i=0;i<count;i++) {
 			User user = new User();
-			user.setId(13000000000L+i);
+			user.setMobile(String.valueOf(13000000000L+i));
 			user.setLoginCount(1);
 			user.setNickname("user"+i);
 			user.setRegisterDate(new Date());
@@ -36,16 +36,16 @@ public class UserUtil {
 		System.out.println("create user");
 //		//插入数据库
 		Connection conn = DBUtil.getConn();
-		String sql = "insert into sk_user(login_count, nickname, register_date, salt, password, id)values(?,?,?,?,?,?)";
+		String sql = "insert into seckill_user(mobile, login_count, nickname, register_date, salt, password)values(?,?,?,?,?,?)";
 		PreparedStatement pstmt = conn.prepareStatement(sql);
 		for(int i=0;i<users.size();i++) {
 			User user = users.get(i);
-			pstmt.setInt(1, user.getLoginCount());
-			pstmt.setString(2, user.getNickname());
-			pstmt.setTimestamp(3, new Timestamp(user.getRegisterDate().getTime()));
-			pstmt.setString(4, user.getSalt());
-			pstmt.setString(5, user.getPassword());
-			pstmt.setLong(6, user.getId());
+			pstmt.setString(1, user.getMobile());
+			pstmt.setInt(2, user.getLoginCount());
+			pstmt.setString(3, user.getNickname());
+			pstmt.setTimestamp(4, new Timestamp(user.getRegisterDate().getTime()));
+			pstmt.setString(5, user.getSalt());
+			pstmt.setString(6, user.getPassword());
 			pstmt.addBatch();
 		}
 		pstmt.executeBatch();
@@ -53,7 +53,7 @@ public class UserUtil {
 		conn.close();
 		System.out.println("insert to db");
 		//登录，生成token
-		String urlString = "http://localhost:8080/login/do_login";
+		String urlString = "http://localhost:8080/api/auth/login";
 		File file = new File("D:/tokens.txt");
 		if(file.exists()) {
 			file.delete();
@@ -68,7 +68,7 @@ public class UserUtil {
 			co.setRequestMethod("POST");
 			co.setDoOutput(true);
 			OutputStream out = co.getOutputStream();
-			String params = "mobile="+user.getId()+"&password="+MD5Util.inputPassToFormPass("123456");
+			String params = "mobile="+user.getMobile()+"&password="+MD5Util.inputPassToFormPass("123456");
 			out.write(params.getBytes());
 			out.flush();
 			InputStream inputStream = co.getInputStream();
@@ -83,13 +83,13 @@ public class UserUtil {
 			String response = new String(bout.toByteArray());
 			JSONObject jo = JSON.parseObject(response);
 			String token = jo.getString("data");
-			System.out.println("create token : " + user.getId());
+			System.out.println("create token : " + user.getMobile());
 			
-			String row = user.getId()+","+token;
+			String row = user.getMobile()+","+token;
 			raf.seek(raf.length());
 			raf.write(row.getBytes());
 			raf.write("\r\n".getBytes());
-			System.out.println("write to file : " + user.getId());
+			System.out.println("write to file : " + user.getMobile());
 		}
 		raf.close();
 		

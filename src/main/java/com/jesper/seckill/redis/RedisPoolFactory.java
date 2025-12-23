@@ -3,6 +3,7 @@ package com.jesper.seckill.redis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -22,9 +23,13 @@ public class RedisPoolFactory {
         config.setMaxIdle(redisConfig.getPoolMaxIdle());
         config.setMaxTotal(redisConfig.getPoolMaxTotal());
         config.setMaxWaitMillis(redisConfig.getPoolMaxWait() * 1000);
-        JedisPool jp = new JedisPool(config, redisConfig.getHost(), redisConfig.getPort(),
-                redisConfig.getTimeout()*1000, redisConfig.getPassword(), 0);
-        return jp;
+        String password = redisConfig.getPassword();
+        if (StringUtils.hasText(password)) {
+            return new JedisPool(config, redisConfig.getHost(), redisConfig.getPort(),
+                    redisConfig.getTimeout() * 1000, password, 0);
+        }
+        return new JedisPool(config, redisConfig.getHost(), redisConfig.getPort(),
+                redisConfig.getTimeout() * 1000);
     }
 
 }

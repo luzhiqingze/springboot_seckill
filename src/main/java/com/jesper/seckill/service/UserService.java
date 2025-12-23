@@ -1,6 +1,6 @@
 package com.jesper.seckill.service;
 
-import com.alibaba.druid.util.StringUtils;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.jesper.seckill.bean.User;
 import com.jesper.seckill.exception.GlobalException;
 import com.jesper.seckill.mapper.UserMapper;
@@ -12,6 +12,7 @@ import com.jesper.seckill.util.UUIDUtil;
 import com.jesper.seckill.vo.LoginVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
@@ -37,7 +38,7 @@ public class UserService {
             return user;
         }
         //取数据库
-        user = userMapper.getById(id);
+        user = userMapper.selectById(id);
         //再存入缓存
         if (user != null) {
             redisService.set(UserKey.getById, "" + id, user);
@@ -58,7 +59,7 @@ public class UserService {
         User toBeUpdate = new User();
         toBeUpdate.setId(id);
         toBeUpdate.setPassword(MD5Util.formPassToDBPass(formPass, user.getSalt()));
-        userMapper.update(toBeUpdate);
+        userMapper.updateById(toBeUpdate);
         //更新缓存：先删除再插入
         redisService.delete(UserKey.getById, ""+id);
         user.setPassword(toBeUpdate.getPassword());
@@ -73,7 +74,7 @@ public class UserService {
         String mobile = loginVo.getMobile();
         String formPass = loginVo.getPassword();
         //判断手机号是否存在
-        User user = getById(Long.parseLong(mobile));
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getMobile, mobile));
         if (user == null) {
             throw new GlobalException(CodeMsg.MOBILE_NOT_EXIST);
         }
@@ -106,7 +107,7 @@ public class UserService {
      * 根据token获取用户信息
      */
     public User getByToken(HttpServletResponse response, String token) {
-        if (StringUtils.isEmpty(token)) {
+        if (!StringUtils.hasText(token)) {
             return null;
         }
         User user = redisService.get(UserKey.token, token, User.class);
