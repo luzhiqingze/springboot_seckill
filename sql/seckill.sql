@@ -1,123 +1,128 @@
-/*
-Navicat MySQL Data Transfer
-
-Source Server         : localhost
-Source Server Version : 50720
-Source Host           : localhost:3306
-Source Database       : seckill
-
-Target Server Type    : MYSQL
-Target Server Version : 50720
-File Encoding         : 65001
-
-Date: 2018-05-29 17:29:21
-*/
-
 SET FOREIGN_KEY_CHECKS=0;
 
--- ----------------------------
--- Table structure for sk_goods
--- ----------------------------
-DROP TABLE IF EXISTS `sk_goods`;
-CREATE TABLE `sk_goods` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '商品ID',
-  `goods_name` varchar(30) DEFAULT NULL COMMENT '商品名称',
-  `goods_title` varchar(64) DEFAULT NULL COMMENT '商品标题',
-  `goods_img` varchar(64) DEFAULT NULL COMMENT '商品图片',
-  `goods_detail` longtext COMMENT '商品详情',
-  `goods_price` decimal(10,2) DEFAULT NULL,
-  `goods_stock` int(11) DEFAULT '0' COMMENT '商品库存，-1表示没有限制',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
--- ----------------------------
--- Records of sk_goods
--- ----------------------------
-INSERT INTO `sk_goods` VALUES ('1', 'iphoneX', 'Apple/苹果iPhone X 全网通4G手机苹果X 10', '/img/iphonex.png', 'Apple/苹果iPhone X 全网通4G手机苹果X 10', '7788.00', '100');
-INSERT INTO `sk_goods` VALUES ('2', '华为 Mate 10', 'Huawei/华为 Mate 10 6G+128G 全网通4G智能手机', '/img/meta10.png', 'Huawei/华为 Mate 10 6G+128G 全网通4G智能手机', '4199.00', '50');
+-- ===============================
+-- 2. 用户表（升级版）
+-- ===============================
+DROP TABLE IF EXISTS seckill_user;
+CREATE TABLE `seckill_user` (
+                                `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+                                `mobile` VARCHAR(20) NOT NULL COMMENT '手机号',
+                                `nickname` VARCHAR(255) NOT NULL COMMENT '昵称',
+                                `password` VARCHAR(100) NOT NULL COMMENT '加密密码（支持BCrypt）',
+                                `salt` VARCHAR(32) DEFAULT NULL COMMENT '加密盐',
+                                `head` VARCHAR(128) DEFAULT NULL COMMENT '头像',
+                                `register_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                `last_login_date` DATETIME DEFAULT NULL,
+                                `login_count` INT DEFAULT 0,
+                                PRIMARY KEY (`id`),
+                                UNIQUE KEY `uk_mobile` (`mobile`)
+) ENGINE=InnoDB COMMENT='用户表';
 
--- ----------------------------
--- Table structure for sk_goods_seckill
--- ----------------------------
-DROP TABLE IF EXISTS `sk_goods_seckill`;
-CREATE TABLE `sk_goods_seckill` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '秒杀商品id',
-  `goods_id` bigint(20) DEFAULT NULL COMMENT '商品id',
-  `seckill_price` decimal(10,2) DEFAULT '0.00' COMMENT '秒杀价',
-  `stock_count` int(11) DEFAULT NULL COMMENT '库存数量',
-  `start_date` datetime DEFAULT NULL COMMENT '秒杀开始时间',
-  `end_date` datetime DEFAULT NULL COMMENT '秒杀结束时间',
-  `version` int(11) DEFAULT NULL COMMENT '并发版本控制',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+-- ===============================
+-- 3. 商品表
+-- ===============================
+DROP TABLE IF EXISTS goods;
+CREATE TABLE `goods` (
+                         `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '商品ID',
+                         `goods_name` VARCHAR(30) DEFAULT NULL,
+                         `goods_title` VARCHAR(64) DEFAULT NULL,
+                         `goods_img` VARCHAR(128) DEFAULT NULL,
+                         `goods_detail` LONGTEXT,
+                         `goods_price` DECIMAL(10,2) DEFAULT '0.00',
+                         `goods_stock` INT DEFAULT '0',
+                         `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                         `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                         PRIMARY KEY (`id`)
+) ENGINE=InnoDB COMMENT='商品表';
 
--- ----------------------------
--- Records of sk_goods_seckill
--- ----------------------------
-INSERT INTO `sk_goods_seckill` VALUES ('1', '1', '0.01', '8', '2018-05-22 17:22:52', '2018-05-22 18:23:00', '0');
-INSERT INTO `sk_goods_seckill` VALUES ('2', '2', '0.01', '8', '2018-04-29 22:56:10', '2018-05-01 22:56:15', '0');
+-- ===============================
+-- 4. 秒杀商品表（核心）
+-- ===============================
+DROP TABLE IF EXISTS seckill_goods;
+CREATE TABLE `seckill_goods` (
+                                 `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '秒杀商品ID',
+                                 `goods_id` BIGINT NOT NULL COMMENT '商品ID',
+                                 `seckill_price` DECIMAL(10,2) DEFAULT '0.00',
+                                 `stock_count` INT DEFAULT '0',
+                                 `start_date` DATETIME DEFAULT NULL,
+                                 `end_date` DATETIME DEFAULT NULL,
+                                 `version` INT DEFAULT '0' COMMENT '乐观锁版本号',
+                                 PRIMARY KEY (`id`),
+                                 UNIQUE KEY `uk_goods_id` (`goods_id`),
+                                 KEY `idx_time` (`start_date`, `end_date`)
+) ENGINE=InnoDB COMMENT='秒杀商品表';
 
+-- ===============================
+-- 5. 订单表（升级版）
+-- ===============================
+DROP TABLE IF EXISTS order_info;
+CREATE TABLE `order_info` (
+                              `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '订单ID',
+                              `user_id` BIGINT DEFAULT NULL,
+                              `goods_id` BIGINT DEFAULT NULL,
+                              `goods_name` VARCHAR(30) DEFAULT NULL,
+                              `goods_count` INT DEFAULT '0',
+                              `goods_price` DECIMAL(10,2) DEFAULT '0.00',
+                              `order_channel` TINYINT DEFAULT '0' COMMENT '1PC 2Android 3iOS',
+                              `status` TINYINT DEFAULT '0' COMMENT '0新建 1已支付 2已发货 3已收货 4退款',
+                              `pay_status` TINYINT DEFAULT '0' COMMENT '0未支付 1已支付',
+                              `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                              `pay_date` DATETIME DEFAULT NULL,
+                              `close_time` DATETIME DEFAULT NULL,
+                              PRIMARY KEY (`id`),
+                              KEY `idx_user_id` (`user_id`),
+                              KEY `idx_goods_id` (`goods_id`)
+) ENGINE=InnoDB COMMENT='订单表';
 
--- ----------------------------
--- Table structure for sk_order
--- ----------------------------
-DROP TABLE IF EXISTS `sk_order`;
-CREATE TABLE `sk_order` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) DEFAULT NULL,
-  `order_id` bigint(20) DEFAULT NULL,
-  `goods_id` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `u_uid_gid` (`user_id`,`goods_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
+-- ===============================
+-- 6. 秒杀订单表（防重复）
+-- ===============================
+DROP TABLE IF EXISTS seckill_order;
+CREATE TABLE `seckill_order` (
+                                 `id` BIGINT NOT NULL AUTO_INCREMENT,
+                                 `user_id` BIGINT NOT NULL,
+                                 `order_id` BIGINT NOT NULL,
+                                 `goods_id` BIGINT NOT NULL,
+                                 PRIMARY KEY (`id`),
+                                 UNIQUE KEY `uk_user_goods` (`user_id`,`goods_id`),
+                                 KEY `idx_goods_id` (`goods_id`)
+) ENGINE=InnoDB COMMENT='秒杀订单表';
 
--- ----------------------------
--- Records of sk_order
--- ----------------------------
-INSERT INTO `sk_order` VALUES ('10', '18718185897', '1', '1');
+-- ===============================
+-- 7. 秒杀库存流水表（高并发兜底）
+-- ===============================
+DROP TABLE IF EXISTS seckill_stock_log;
+CREATE TABLE `seckill_stock_log` (
+                                     `id` BIGINT NOT NULL AUTO_INCREMENT,
+                                     `goods_id` BIGINT NOT NULL,
+                                     `order_id` BIGINT DEFAULT NULL,
+                                     `status` TINYINT NOT NULL COMMENT '0初始化 1扣减成功 2回滚',
+                                     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                     PRIMARY KEY (`id`),
+                                     KEY `idx_goods_id` (`goods_id`)
+) ENGINE=InnoDB COMMENT='秒杀库存流水表';
 
--- ----------------------------
--- Table structure for sk_order_info
--- ----------------------------
-DROP TABLE IF EXISTS `sk_order_info`;
-CREATE TABLE `sk_order_info` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) DEFAULT NULL,
-  `goods_id` bigint(20) DEFAULT NULL,
-  `delivery_addr_id` bigint(20) DEFAULT NULL,
-  `goods_name` varchar(30) DEFAULT NULL,
-  `goods_count` int(11) DEFAULT NULL,
-  `goods_price` decimal(10,2) DEFAULT NULL,
-  `order_channel` tinyint(4) DEFAULT NULL COMMENT '订单渠道，1在线，2android，3ios',
-  `status` tinyint(4) DEFAULT NULL COMMENT '订单状态，0新建未支付，1已支付，2已发货，3已收货，4已退款，5已完成',
-  `create_date` datetime DEFAULT NULL,
-  `pay_date` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
+-- ===============================
+-- 8. 接口幂等表（防重复提交）
+-- ===============================
+DROP TABLE IF EXISTS request_log;
+CREATE TABLE `request_log` (
+                               `id` BIGINT NOT NULL AUTO_INCREMENT,
+                               `request_id` VARCHAR(64) NOT NULL,
+                               `user_id` BIGINT DEFAULT NULL,
+                               `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                               PRIMARY KEY (`id`),
+                               UNIQUE KEY `uk_request_id` (`request_id`)
+) ENGINE=InnoDB COMMENT='接口幂等日志表';
+-- Sample test user (password: 123456)
+INSERT INTO seckill_user (mobile, nickname, password, salt)
+VALUES ('13800138000', 'test_user', 'e10adc3949ba59abbe56e057f20f883e', '1a2b3c4d');
 
--- ----------------------------
--- Records of sk_order_info
--- ----------------------------
-INSERT INTO `sk_order_info` VALUES ('10', '18718185897', '1', null, 'iphoneX', '1', '7788.00', '1', '0', '2018-05-29 17:02:00', null);
+-- Sample goods
+INSERT INTO goods (goods_name, goods_title, goods_img, goods_detail, goods_price, goods_stock)
+VALUES ('iPhone 14', 'Apple iPhone 14 Pro Max', '/img/iphone14.jpg', 'Latest iPhone model', 9999.00, 100);
 
--- ----------------------------
--- Table structure for sk_user
--- ----------------------------
-DROP TABLE IF EXISTS `sk_user`;
-CREATE TABLE `sk_user` (
-  `id` bigint(20) unsigned NOT NULL COMMENT '用户id',
-  `nickname` varchar(255) NOT NULL COMMENT '昵称',
-  `password` varchar(32) DEFAULT NULL COMMENT 'MD5(MD5(pass明文+固定salt)+salt',
-  `salt` varchar(10) DEFAULT NULL COMMENT '混淆盐',
-  `head` varchar(128) DEFAULT NULL COMMENT '头像，云存储的ID',
-  `register_date` datetime DEFAULT NULL COMMENT '注册时间',
-  `last_login_date` datetime DEFAULT NULL COMMENT '上次登录时间',
-  `login_count` int(11) DEFAULT NULL COMMENT '登录次数',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Records of sk_user
--- ----------------------------
-INSERT INTO `sk_user` VALUES ('18181818181', 'jesper', 'b7797cce01b4b131b433b6acf4add449', '1a2b3c4d', null, '2018-05-21 21:10:21', '2018-05-21 21:10:25', '1');
-INSERT INTO `sk_user` VALUES ('18217272828', 'jesper', 'b7797cce01b4b131b433b6acf4add449', '1a2b3c4d', null, '2018-05-21 21:10:21', '2018-05-21 21:10:25', '1');
+-- Sample seckill goods
+INSERT INTO seckill_goods (goods_id, seckill_price, stock_count, start_date, end_date)
+VALUES (1, 8999.00, 10, '2024-01-01 00:00:00', '2024-01-02 23:59:59');
