@@ -74,19 +74,16 @@ public class SeckillController implements InitializingBean {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
         //内存标记，减少redis访问
-        boolean over = localOverMap.get(goodsId);
+        Boolean overFlag = localOverMap.get(goodsId);
+        boolean over = Boolean.TRUE.equals(overFlag);
         if (over) {
             return Result.error(CodeMsg.SECKILL_OVER);
         }
         //预减库存
         long stock = redisService.decr(GoodsKey.getGoodsStock, "" + goodsId);//10
         if (stock < 0) {
-            afterPropertiesSet();
-            long stock2 = redisService.decr(GoodsKey.getGoodsStock, "" + goodsId);//10
-            if(stock2 < 0){
-                localOverMap.put(goodsId, true);
-                return Result.error(CodeMsg.SECKILL_OVER);
-            }
+            localOverMap.put(goodsId, true);
+            return Result.error(CodeMsg.SECKILL_OVER);
         }
         //判断重复秒杀
         SeckillOrder order = orderService.getOrderByUserIdGoodsId(user.getId(), goodsId);

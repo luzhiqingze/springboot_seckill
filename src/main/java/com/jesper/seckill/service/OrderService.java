@@ -26,7 +26,16 @@ public class OrderService {
     RedisService redisService;
 
     public SeckillOrder getOrderByUserIdGoodsId(long userId, long goodsId) {
-        return redisService.get(OrderKey.getSeckillOrderByUidGid, "" + userId + "_" + goodsId, SeckillOrder.class);
+        String key = "" + userId + "_" + goodsId;
+        SeckillOrder cached = redisService.get(OrderKey.getSeckillOrderByUidGid, key, SeckillOrder.class);
+        if (cached != null) {
+            return cached;
+        }
+        SeckillOrder dbOrder = orderMapper.getOrderByUserIdGoodsId(userId, goodsId);
+        if (dbOrder != null) {
+            redisService.set(OrderKey.getSeckillOrderByUidGid, key, dbOrder);
+        }
+        return dbOrder;
     }
 
     public OrderInfo getOrderById(long orderId) {
